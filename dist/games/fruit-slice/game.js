@@ -1,6 +1,7 @@
 import { makeSprite } from './sprites.js';
 import { createGameSession, library } from '../../shared/sdk.js';
 import { registerOffline } from '../../shared/pwa.js';
+import { bindFullscreen } from '../../shared/fullscreen.js';
 import { segmentHitsCircle, pointsForCut, bombPenalty, launchVelocity } from './physics.js';
 
 const $ = id => document.getElementById(id);
@@ -160,20 +161,7 @@ $('sound').addEventListener('click', () => { soundOn = !soundOn; library.setSoun
 $('help-open').addEventListener('click', () => $('help').showModal());
 $('help-close').addEventListener('click', () => $('help').close());
 $('help').addEventListener('click', event => { if (event.target === $('help')) { const b = $('help').getBoundingClientRect(); if (event.clientX < b.left || event.clientX > b.right || event.clientY < b.top || event.clientY > b.bottom) $('help').close(); } });
-$('fullscreen').addEventListener('click', async () => {
-  try {
-    if (document.fullscreenElement || document.webkitFullscreenElement) {
-      const exit = document.exitFullscreen || document.webkitExitFullscreen;
-      if (exit) await exit.call(document);
-    } else {
-      const enter = app.requestFullscreen || app.webkitRequestFullscreen;
-      if (enter) await enter.call(app);
-      else toast('在 Safari 分享菜单中添加到主屏幕，即可沉浸游玩');
-    }
-  } catch { toast('请在 Safari 中打开，或添加到主屏幕后游玩'); }
-});
-function syncFullscreen() { $('fullscreen').setAttribute('aria-label', document.fullscreenElement || document.webkitFullscreenElement ? '退出全屏' : '进入全屏'); }
-document.addEventListener('fullscreenchange', syncFullscreen); document.addEventListener('webkitfullscreenchange', syncFullscreen);
+bindFullscreen($('fullscreen'), { target: app, notify: toast });
 document.addEventListener('visibilitychange', () => { if (document.hidden) { pause(); audio?.suspend().catch(() => {}); } });
 window.addEventListener('blur', () => { if (state === 'playing') pause(); });
 

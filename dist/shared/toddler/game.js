@@ -4,6 +4,7 @@ import { art, drawing, puzzleArt } from './art.js';
 import { createAudio } from './audio.js';
 import { createGameSession, library } from '../sdk.js';
 import { registerOffline } from '../pwa.js';
+import { bindFullscreen } from '../fullscreen.js';
 
 const $ = id => document.getElementById(id);
 const activity = activities.find(item => item.id === document.body.dataset.game);
@@ -225,16 +226,7 @@ $('sound').addEventListener('click', () => { sound = !sound; library.setSound(so
 $('repeat').addEventListener('click', () => { if (active && !paused) speakPrompt(); else audio.speak(activity.description); });
 $('pause').addEventListener('click', pause);
 $('level').addEventListener('change', event => { mode = event.target.value === 'curious' ? 'curious' : 'gentle'; prepare(); });
-$('fullscreen').addEventListener('click', async () => {
-  try {
-    if (document.fullscreenElement || document.webkitFullscreenElement) await (document.exitFullscreen || document.webkitExitFullscreen).call(document);
-    else {
-      const request = document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen;
-      if (request) await request.call(document.documentElement);
-      else feedback('在 Safari 中添加到主屏幕，可以更舒适地玩。');
-    }
-  } catch { feedback('也可以用 Safari 的“添加到主屏幕”打开。'); }
-});
+bindFullscreen($('fullscreen'), { notify: feedback });
 document.addEventListener('keydown', event => { if (event.key === 'Escape') { if (paused) resume(); else pause(); } });
 document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
 window.addEventListener('pagehide', () => { pause(); audio.stop(); });

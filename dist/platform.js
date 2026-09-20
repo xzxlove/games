@@ -1,6 +1,7 @@
 import { games, selectGames } from './games.js';
 import { library } from './shared/sdk.js';
 import { registerOffline } from './shared/pwa.js';
+import { bindFullscreen } from './shared/fullscreen.js';
 
 const $ = id => document.getElementById(id);
 const views = {
@@ -85,18 +86,7 @@ $('game-grid').addEventListener('click', event => {
 $('open-guide').addEventListener('click', () => $('guide').showModal());
 $('close-guide').addEventListener('click', () => $('guide').close());
 $('sound-setting').addEventListener('change', event => library.setSound(event.target.checked));
-$('fullscreen').addEventListener('click', async () => {
-  try {
-    if (document.fullscreenElement || document.webkitFullscreenElement) await (document.exitFullscreen || document.webkitExitFullscreen).call(document);
-    else {
-      const request = document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen;
-      if (!request) return toast('用 Safari 添加到主屏幕，即可沉浸游玩');
-      await request.call(document.documentElement);
-    }
-  } catch { toast('可用 Safari 的「添加到主屏幕」打开游戏室'); }
-});
-function syncFullscreen() { $('fullscreen').querySelector('span').textContent = document.fullscreenElement || document.webkitFullscreenElement ? '退出全屏' : '全屏'; }
-document.addEventListener('fullscreenchange', syncFullscreen); document.addEventListener('webkitfullscreenchange', syncFullscreen);
+bindFullscreen($('fullscreen'), { notify: toast });
 document.addEventListener('keydown', event => { if (event.key === '/' && !event.metaKey && !event.ctrlKey && !$('guide').open && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) { event.preventDefault(); $('search').focus(); } });
 window.addEventListener('hashchange', () => { view = views[location.hash.slice(1)] ? location.hash.slice(1) : 'all'; render(); });
 window.addEventListener('pageshow', render);
