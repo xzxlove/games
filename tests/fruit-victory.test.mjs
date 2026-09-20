@@ -72,6 +72,8 @@ function gameHarness() {
     localStorage: { setItem() {}, getItem() { return null; } }, performance: { now: () => 0 },
     setTimeout: () => 0, clearTimeout() {}, requestAnimationFrame() {},
     makeSprite() {}, registerOffline() {}, bindFullscreen() {},
+    createFruitAudio: () => ({ unlock() {}, play() {}, stop() {}, setEnabled() {} }),
+    createBombHaptics: () => ({ hit() {}, stop() {} }),
     createGameSession: () => ({ start() { started++; }, best: () => 0, finish: result => saved.push(result) }),
     library: { read: () => ({ settings: { sound: false } }), setSound() {} },
   });

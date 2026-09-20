@@ -1,4 +1,5 @@
 import { makeSprite } from './sprites.js';
+import { createFruitAudio, createBombHaptics } from './audio.js';
 import { createGameSession, library } from '../../shared/sdk.js';
 import { registerOffline } from '../../shared/pwa.js';
 import { bindFullscreen } from '../../shared/fullscreen.js';
@@ -20,7 +21,10 @@ let state = 'home', mode = 'classic', score = 0, timeLeft = 60, elapsed = 0, cut
 let combo = 0, lastCut = -100, comboUntil = 0, waveIn = .6, shake = 0;
 let fruits = [], pieces = [], particles = [], splats = [], labels = [], trails = [];
 let activePointer = null, pointer = null, keyboardBlade = null, keys = new Set();
-let audio = null, soundOn = library.read().settings.sound;
+let soundOn = library.read().settings.sound;
+const audio = createFruitAudio({ enabled: soundOn });
+const haptics = createBombHaptics();
+const BOMB_SHAKE_SECONDS = .34;
 let lastFrame = performance.now(), toastTimer, nextFruitId = 0;
 let victory = null, victoryTimeLeft = 0;
 const rand = (lo, hi) => lo + Math.random() * (hi - lo);
@@ -61,28 +65,6 @@ function resize() {
 }
 new ResizeObserver(resize).observe(app);
 
-function unlockAudio() {
-  if (!soundOn) return;
-  try {
-    if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();
-    if (audio.state === 'suspended') audio.resume().catch(() => {});
-  } catch { /* Audio is optional. */ }
-}
-function tone(kind, step = 0) {
-  if (!soundOn || !audio || audio.state !== 'running') return;
-  const now = audio.currentTime;
-  const osc = audio.createOscillator(), gain = audio.createGain();
-  osc.connect(gain); gain.connect(audio.destination); osc.start(now);
-  if (kind === 'bomb') {
-    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, now); osc.frequency.exponentialRampToValueAtTime(22, now + .24);
-    gain.gain.setValueAtTime(.09, now); gain.gain.exponentialRampToValueAtTime(.001, now + .28); osc.stop(now + .29);
-  } else {
-    osc.type = 'sine'; osc.frequency.setValueAtTime(kind === 'start' ? 400 : 600 + Math.min(step, 8) * 95, now);
-    osc.frequency.exponentialRampToValueAtTime(kind === 'start' ? 800 : 260 + step * 40, now + .12);
-    gain.gain.setValueAtTime(.0001, now); gain.gain.exponentialRampToValueAtTime(.075, now + .008); gain.gain.exponentialRampToValueAtTime(.001, now + .15); osc.stop(now + .16);
-  }
-  osc.onended = () => { osc.disconnect(); gain.disconnect(); };
-}
 function syncSound() {
   $('sound').setAttribute('aria-pressed', String(soundOn));
   $('sound').setAttribute('aria-label', soundOn ? '关闭音效' : '开启音效');
@@ -103,7 +85,7 @@ function showState(next) {
   canvas.inert = modal || next === 'home';
   $('hint').textContent = next === 'home' ? '手指滑一滑，快乐就开花' : victory ? '来回划切金色果实，每一刀都加分！' : mode === 'zen' ? '慢慢来，每一刀都算数' : '连续切中有奖励 · 小心炸弹';
   $('bottom-note').textContent = next === 'home' ? '一刀一果 · 刚刚好' : '按 Esc 暂停';
-  if (next !== 'playing') { resetInput(); $('combo').classList.remove('visible'); }
+  if (next !== 'playing') { resetInput(); audio.stop(); haptics.stop(); app.classList.remove('bomb-impact'); $('combo').classList.remove('visible'); }
 }
 function syncBest() {
   $('home-best').textContent = bests[mode]; $('hud-best').textContent = bests[mode];
@@ -119,7 +101,8 @@ function syncHUD() {
 }
 function startGame() {
   session.start(mode);
-  unlockAudio(); tone('start');
+  audio.stop(); haptics.stop(); app.classList.remove('bomb-impact');
+  audio.unlock(); audio.play('start');
   score = 0; cuts = 0; maxCombo = 0; combo = 0; lastCut = -100; comboUntil = 0;
   timeLeft = 60; elapsed = 0; waveIn = .35; shake = 0;
   victory = null; victoryTimeLeft = 0;
@@ -135,7 +118,7 @@ function pause() {
 }
 function resume() {
   if (state !== 'paused') return;
-  unlockAudio(); showState('playing'); lastFrame = performance.now(); canvas.focus({ preventScroll: true });
+  audio.unlock(); showState('playing'); lastFrame = performance.now(); canvas.focus({ preventScroll: true });
 }
 function finish() {
   if (state !== 'playing' && state !== 'paused') return;
@@ -161,9 +144,9 @@ function startVictory() {
   victory = createVictoryFruit(0, 0, 0); positionVictoryFruit();
   victoryTimeLeft = VICTORY_SECONDS;
   fruits = []; pieces = []; splats = []; labels = []; trails = [];
-  combo = 0; lastCut = -100; shake = 0;
-  $('combo').classList.remove('visible'); $('flash').classList.remove('hit');
-  showState('playing'); syncHUD(); tone('start');
+  combo = 0; lastCut = -100;
+  $('combo').classList.remove('visible');
+  showState('playing'); syncHUD(); audio.play('reward');
 }
 
 document.querySelectorAll('[data-mode]').forEach(button => button.addEventListener('click', () => {
@@ -176,18 +159,19 @@ $('restart').addEventListener('click', startGame); $('pause').addEventListener('
 $('resume').addEventListener('click', resume); $('result-home').addEventListener('click', home);
 $('pause-home').addEventListener('click', () => mode === 'zen' ? finish() : home());
 document.querySelector('.brand').addEventListener('click', event => { event.preventDefault(); if (state === 'playing') pause(); else if (state === 'home') home(); });
-$('sound').addEventListener('click', () => { soundOn = !soundOn; library.setSound(soundOn); storage.set('melon-sound', soundOn ? 'on' : 'off'); syncSound(); if (soundOn) { unlockAudio(); tone('start'); } });
+$('sound').addEventListener('click', () => { soundOn = !soundOn; library.setSound(soundOn); storage.set('melon-sound', soundOn ? 'on' : 'off'); audio.setEnabled(soundOn); syncSound(); if (soundOn) { audio.unlock(); audio.play('start'); } });
 $('help-open').addEventListener('click', () => $('help').showModal());
 $('help-close').addEventListener('click', () => $('help').close());
 $('help').addEventListener('click', event => { if (event.target === $('help')) { const b = $('help').getBoundingClientRect(); if (event.clientX < b.left || event.clientX > b.right || event.clientY < b.top || event.clientY > b.bottom) $('help').close(); } });
 bindFullscreen($('fullscreen'), { target: app, notify: toast });
-document.addEventListener('visibilitychange', () => { if (document.hidden) { pause(); audio?.suspend().catch(() => {}); } });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { pause(); audio.stop(); haptics.stop(); } });
 window.addEventListener('blur', () => { if (state === 'playing') pause(); });
+window.addEventListener('pagehide', () => { audio.stop(); haptics.stop(); });
 
 function localPoint(event) { const b = canvas.getBoundingClientRect(); return { x: event.clientX - b.left, y: event.clientY - b.top }; }
 canvas.addEventListener('pointerdown', event => {
   if (state !== 'playing' || activePointer !== null || (event.pointerType === 'mouse' && event.button !== 0)) return;
-  event.preventDefault(); unlockAudio(); activePointer = event.pointerId; pointer = localPoint(event); combo = 0; lastCut = -100;
+  event.preventDefault(); audio.unlock(); activePointer = event.pointerId; pointer = localPoint(event); combo = 0; lastCut = -100;
   keyboardBlade = null; canvas.setPointerCapture(event.pointerId); trails.push({ ...pointer, life: .18 });
 });
 canvas.addEventListener('pointermove', event => {
@@ -220,7 +204,7 @@ document.addEventListener('keydown', event => {
   if (event.code === 'Escape') { if (state === 'playing') pause(); else if (state === 'paused') resume(); return; }
   if (state !== 'playing' || /BUTTON|A/.test(document.activeElement?.tagName)) return;
   if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space'].includes(event.code)) {
-    event.preventDefault(); unlockAudio(); keys.add(event.code); keyboardBlade ||= { x: width / 2, y: height / 2 };
+    event.preventDefault(); audio.unlock(); keys.add(event.code); keyboardBlade ||= { x: width / 2, y: height / 2 };
   }
 });
 document.addEventListener('keyup', event => keys.delete(event.code));
@@ -252,7 +236,7 @@ function cutBetween(a, b) {
     const points = sliceVictoryFruit(victory, a, b, elapsed);
     if (points) {
       score += points; cuts++; maxCombo = Math.max(maxCombo, victory.hits);
-      burst(victory, false); tone('cut', Math.min(8, Math.floor(victory.hits / 3)));
+      burst(victory, false); audio.play('victory', { combo: victory.hits, pan: 0 });
       labels.push({ x: victory.x + rand(-victory.r * .5, victory.r * .5), y: victory.y - victory.r * .65, text: `+${points}`, color: '#ffe6a0', life: .7, total: .7 });
       syncHUD();
     }
@@ -264,8 +248,13 @@ function cutBetween(a, b) {
     fruit.cut = true;
     if (fruit.type === 'bomb') {
       ({ score, time: timeLeft } = bombPenalty(score, timeLeft));
-      combo = 0; lastCut = -100; $('combo').classList.remove('visible'); tone('bomb');
-      if (!reducedMotion) { shake = .23; $('flash').classList.remove('hit'); void $('flash').offsetWidth; $('flash').classList.add('hit'); }
+      combo = 0; lastCut = -100; $('combo').classList.remove('visible'); audio.play('bomb'); haptics.hit();
+      if (!reducedMotion) {
+        shake = BOMB_SHAKE_SECONDS;
+        app.classList.remove('bomb-impact'); $('flash').classList.remove('hit');
+        void app.offsetWidth;
+        app.classList.add('bomb-impact'); $('flash').classList.add('hit');
+      }
       burst(fruit, true); labels.push({ x: fruit.x, y: fruit.y - fruit.r, text: '−20 分  −3 秒', color: '#ffaaa1', life: 1.2, total: 1.2 });
       syncHUD(); if (timeLeft <= 0) { startVictory(); break; } continue;
     }
@@ -277,7 +266,7 @@ function cutBetween(a, b) {
       pieces.push({ x: fruit.x + Math.cos(normal) * side * 7, y: fruit.y + Math.sin(normal) * side * 7, r: fruit.r, vx: fruit.vx + Math.cos(normal) * side * rand(110, 170), vy: fruit.vy * .3 + Math.sin(normal) * side * 110, angle: normal + (side === -1 ? Math.PI : 0), spin: side * rand(1, 3), life: 1.7, variety: fruit.variety, fruitKind: fruit.fruitKind });
     }
     labels.push({ x: fruit.x, y: fruit.y - fruit.r * .6, text: `+${points}`, color: '#f1ffbc', life: .85, total: .85 });
-    tone('cut', combo);
+    audio.play('cut', { combo, fruitKind: fruit.fruitKind, pan: fruit.x / width * 1.3 - .65 });
     if (combo >= 3) {
       $('combo').innerHTML = `${combo} 连切！<small>${combo >= 6 ? '刀法出神入化' : '这刀，漂亮'}</small>`;
       $('combo').classList.add('visible'); comboUntil = elapsed + .8;
@@ -387,7 +376,7 @@ function draw(clock) {
   ctx.clearRect(0, 0, width, height);
   if (state === 'home') { drawHome(clock); return; }
   ctx.save();
-  if (shake > 0 && !reducedMotion && state === 'playing') ctx.translate(rand(-7, 7) * shake / .23, rand(-5, 5) * shake / .23);
+  if (shake > 0 && !reducedMotion && state === 'playing') ctx.translate(rand(-7, 7) * shake / BOMB_SHAKE_SECONDS, rand(-5, 5) * shake / BOMB_SHAKE_SECONDS);
   for (const p of splats) { ctx.globalAlpha = Math.min(.16, p.life / 2.8 * .16); ctx.fillStyle = p.color; ctx.beginPath(); ctx.ellipse(p.x, p.y, p.r, p.r * .7, .3, 0, 7); ctx.fill(); }
   ctx.globalAlpha = 1;
   for (const p of pieces) drawSprite('half', p, Math.min(1, p.life * 2));
