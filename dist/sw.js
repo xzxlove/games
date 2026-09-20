@@ -1,4 +1,4 @@
-importScripts('./precache.js');
+importScripts('./precache.js', './shared/media-range.js');
 const FAMILY = `playroom:${new URL('./', self.location).pathname}:`;
 const CACHE = FAMILY + self.PLAYROOM_VERSION;
 const ASSETS = self.PLAYROOM_ASSETS;
@@ -16,11 +16,14 @@ self.addEventListener('fetch', event => {
   event.respondWith((async () => {
     try {
       const response = await fetch(event.request);
-      if (response.ok && !response.redirected) {
+      if (response.ok && response.status !== 206 && !response.redirected) {
         const copy = response.clone();
         event.waitUntil(caches.open(CACHE).then(cache => cache.put(url.href, copy)));
       }
       return response;
-    } catch { return await caches.match(url.href) || Response.error(); }
+    } catch {
+      const cached = await caches.match(url.href);
+      return cached ? self.playroomRangeResponse(cached, event.request.headers.get('Range')) : Response.error();
+    }
   })());
 });

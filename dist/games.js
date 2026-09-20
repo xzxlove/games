@@ -19,7 +19,24 @@ export const games = [
       { id: 'zen', title: '随心切切', description: '不限时，无炸弹' },
     ],
   },
-
+  {
+    id: 'tiny-wonderland',
+    title: '宝宝启蒙乐园',
+    englishTitle: 'TINY WONDERLAND',
+    description: '数字、动物、ABC，还有五个好奇小世界。和小宝贝一起听一听、找一找、说一说。',
+    category: '亲子启蒙',
+    tags: ['2 岁起亲子陪玩', '中英配音', '8 个主题'],
+    entry: './games/tiny-wonderland/index.html',
+    cover: './games/tiny-wonderland/assets/cover.svg',
+    background: './games/tiny-wonderland/assets/cover.svg',
+    accent: '#a8b88b',
+    recordKind: 'activity',
+    modes: [
+      { id: 'listen', title: '听一听', description: '点击探索，认识新朋友' },
+      { id: 'find', title: '找一找', description: '听提示，找一找' },
+      { id: 'talk', title: '说一说', description: '亲子轮流表达' },
+    ],
+  },
   ...toddlerGames,
 ];
 
