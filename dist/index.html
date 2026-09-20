@@ -28,9 +28,19 @@
   </aside>
   <main id="content" tabindex="-1">
     <header class="topbar"><p>我的空间 <span>/</span> <b id="breadcrumb">游戏大厅</b></p><div class="top-actions"><button id="fullscreen" class="quiet-button"><svg viewBox="0 0 24 24"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg><span>全屏</span></button><span class="profile" aria-label="个人游戏室">玩</span></div></header>
-    <section class="page-heading"><div><p class="eyebrow">YOUR LITTLE PLAYGROUND</p><h1 id="view-title">游戏大厅<span>↗</span></h1><p id="view-description">留一点时间，玩点喜欢的。</p></div><label class="search"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input id="search" type="search" placeholder="搜索游戏" aria-label="搜索游戏" autocomplete="off"><kbd>/</kbd></label></section>
+    <section class="page-heading"><div><p class="eyebrow">YOUR LITTLE PLAYGROUND</p><h1 id="view-title">游戏大厅<span>↗</span></h1><p id="view-description">留一点时间，玩点喜欢的。</p></div></section>
+    <form id="game-search" class="search-form" role="search" aria-label="搜索游戏">
+      <label class="search-label" for="search">找个游戏，马上开玩</label>
+      <div class="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <input id="search" type="search" placeholder="输入游戏名或关键词，如：水果、拼图" aria-label="搜索游戏" aria-describedby="search-hint" aria-controls="game-grid" autocomplete="off" enterkeyhint="search">
+        <button id="clear-search" class="clear-search" type="button" aria-label="清空搜索" hidden>×</button>
+        <button class="search-submit" type="submit">搜索</button>
+      </div>
+      <p id="search-hint" class="search-hint">在全部游戏中搜索，支持名称、分类和玩法关键词。</p>
+    </form>
     <div class="library-layout">
-      <section class="game-library" aria-label="游戏列表"><div class="section-heading"><h2 id="section-title">全部游戏</h2><span id="result-count">1 款游戏</span></div><div id="game-grid" class="game-grid"></div><div id="empty-state" class="empty-state" hidden><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="5"/><path d="M7 12h4m-2-2v4m7-3h.01M18 14h.01"/></svg><h2 id="empty-title">还没有收藏</h2><p id="empty-description">点一下游戏卡片上的星星，把喜欢的留在这里。</p><button id="reset-view" class="secondary-button">看看全部游戏</button></div></section>
+      <section class="game-library" aria-label="游戏列表"><div class="section-heading"><h2 id="section-title">全部游戏</h2><span id="result-count" role="status" aria-live="polite" aria-atomic="true">1 款游戏</span></div><div id="game-grid" class="game-grid"></div><div id="empty-state" class="empty-state" hidden><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="5"/><path d="M7 12h4m-2-2v4m7-3h.01M18 14h.01"/></svg><h2 id="empty-title">还没有收藏</h2><p id="empty-description">点一下游戏卡片上的星星，把喜欢的留在这里。</p><button id="reset-view" class="secondary-button">看看全部游戏</button></div></section>
       <aside class="record-column" aria-label="我的记录">
         <section class="record-panel"><div class="section-heading"><h2>我的游戏室</h2><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="5"/><path d="M7 12h4m-2-2v4m7-3h.01M18 14h.01"/></svg></div><div class="room-stats"><div><strong id="stat-games">01</strong><span>已收录</span></div><div><strong id="stat-plays">00</strong><span>累计开局</span></div><div><strong id="stat-favorites">00</strong><span>已收藏</span></div></div><div class="record-divider"></div><p class="record-label"><svg viewBox="0 0 24 24"><path d="M8 3h8v6a4 4 0 0 1-8 0zM8 5H4v3a4 4 0 0 0 4 4m8-7h4v3a4 4 0 0 1-4 4m-4 1v6m-4 0h8"/></svg>个人最佳</p><div id="personal-records"></div></section>
         <section class="recent-panel"><div class="section-heading"><h2>最近游玩</h2><button id="see-recent" aria-label="查看所有最近游玩的游戏">查看全部 <span>↗</span></button></div><div id="recent-games"></div></section>

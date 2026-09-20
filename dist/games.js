@@ -57,11 +57,14 @@ export const games = [
 ];
 
 export function selectGames(catalog, records, { view = 'all', query = '' } = {}) {
-  const needle = query.trim().toLocaleLowerCase();
+  const normalize = value => value.normalize('NFKC').toLocaleLowerCase();
+  const terms = normalize(query).trim().split(/\s+/).filter(Boolean);
   let result = catalog.filter(game => {
     if (view === 'favorites' && !records.favorites.includes(game.id)) return false;
     if (view === 'recent' && !records.games[game.id]?.lastPlayedAt) return false;
-    return [game.title, game.englishTitle, game.description, game.category, ...game.tags].join(' ').toLocaleLowerCase().includes(needle);
+    const searchable = normalize([game.title, game.englishTitle, game.description, game.category, ...game.tags,
+      ...game.modes.flatMap(mode => [mode.title, mode.description])].join(' '));
+    return terms.every(term => searchable.includes(term));
   });
   if (view === 'recent') result.sort((a, b) => records.games[b.id].lastPlayedAt - records.games[a.id].lastPlayedAt);
   return result;

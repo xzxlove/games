@@ -58,3 +58,27 @@ test('invalid game results do not modify the record', () => {
   assert.throws(() => store.completeGame('fruit-slice', { mode: 'classic', score: Infinity, seconds: 20 }));
   assert.deepEqual(store.read().games, {});
 });
+
+test('game search matches names, categories and gameplay with normalized multiword queries', () => {
+  const records = createLibraryStore(storage()).read();
+  const search = query => selectGames(games, records, { query }).map(game => game.id);
+  assert.deepEqual(search('切水果'), ['fruit-slice']);
+  assert.deepEqual(search('  ＦＲＵＩＴ   ＳＬＩＣＥ  '), ['fruit-slice']);
+  assert.deepEqual(search('随心切切'), ['fruit-slice']);
+  assert.ok(search('亲子').includes('tiny-wonderland'));
+  assert.ok(search('拼图').includes('little-puzzle'));
+  assert.deepEqual(search('水果 不存在的玩法'), []);
+  assert.deepEqual(search('  \t '), games.map(game => game.id));
+});
+
+test('search keeps favorites and recent filters and preserves recency order', () => {
+  const store = createLibraryStore(storage(), () => 100);
+  store.toggleFavorite('fruit-slice');
+  store.beginGame('fruit-slice');
+  const records = store.read();
+  records.games['fruit-connect'] = { lastPlayedAt: 200 };
+  assert.deepEqual(selectGames(games, records, { view: 'favorites', query: '水果' }).map(game => game.id), ['fruit-slice']);
+  assert.deepEqual(selectGames(games, records, { view: 'favorites', query: '拼图' }), []);
+  assert.deepEqual(selectGames(games, records, { view: 'recent', query: '水果' }).map(game => game.id), ['fruit-connect', 'fruit-slice']);
+  assert.deepEqual(selectGames(games, records, { view: 'recent', query: '' }).map(game => game.id), ['fruit-connect', 'fruit-slice']);
+});

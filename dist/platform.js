@@ -32,7 +32,9 @@ function render() {
   $('view-title').replaceChildren(document.createTextNode(descriptor.title), Object.assign(document.createElement('span'), { textContent: '↗' }));
   $('view-description').textContent = descriptor.description;
   $('section-title').textContent = query.trim() ? '搜索结果' : descriptor.section;
-  $('result-count').textContent = `${list.length} 款游戏`;
+  $('result-count').textContent = query.trim() ? `找到 ${list.length} 款游戏` : `${list.length} 款游戏`;
+  $('clear-search').hidden = !query;
+  $('search-hint').textContent = `在${view === 'all' ? '全部游戏' : descriptor.title}中搜索，支持名称、分类和玩法关键词。`;
   $('all-count').textContent = games.length; $('favorite-count').textContent = favorites.length; $('recent-count').textContent = recent.length;
   $('stat-games').textContent = String(games.length).padStart(2, '0');
   $('stat-plays').textContent = String(games.reduce((sum, game) => sum + (records.games[game.id]?.plays || 0), 0)).padStart(2, '0');
@@ -53,7 +55,7 @@ function render() {
   $('empty-state').hidden = list.length > 0;
   if (!list.length) {
     $('empty-title').textContent = query.trim() ? '没有找到这款游戏' : view === 'favorites' ? '还没有收藏' : '第一局，从这里开始';
-    $('empty-description').textContent = query.trim() ? '换个关键词试试，或看看全部游戏。' : view === 'favorites' ? '点一下游戏卡片上的星星，把喜欢的留在这里。' : '开始玩一款游戏，它就会出现在最近游玩中。';
+    $('empty-description').textContent = query.trim() ? `没有匹配“${query.trim()}”的游戏，换个关键词试试，或看看全部游戏。` : view === 'favorites' ? '点一下游戏卡片上的星星，把喜欢的留在这里。' : '开始玩一款游戏，它就会出现在最近游玩中。';
   }
   $('personal-records').innerHTML = games.filter(game => game.recordKind !== 'activity').map(game => `<div class="game-record"><h3>${escape(game.title)}</h3>${game.modes.map(mode => {
     const best = records.games[game.id]?.bestByMode?.[mode.id];
@@ -74,7 +76,14 @@ function changeView(next) {
 document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => changeView(button.dataset.view)));
 $('see-recent').addEventListener('click', () => changeView('recent'));
 $('reset-view').addEventListener('click', () => changeView('all'));
-$('search').addEventListener('input', render);
+function clearSearch() { $('search').value = ''; render(); $('search').focus(); }
+$('game-search').addEventListener('submit', event => { event.preventDefault(); render(); });
+$('clear-search').addEventListener('click', clearSearch);
+$('search').addEventListener('input', event => { if (!event.isComposing) render(); });
+$('search').addEventListener('compositionend', render);
+$('search').addEventListener('keydown', event => {
+  if (event.key === 'Escape' && !event.isComposing && $('search').value) { event.preventDefault(); clearSearch(); }
+});
 $('game-grid').addEventListener('click', event => {
   const button = event.target.closest('[data-favorite]'); if (!button) return;
   const id = button.dataset.favorite, game = games.find(item => item.id === id); if (!game) return;
