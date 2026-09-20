@@ -1,3 +1,5 @@
+import { toddlerGames } from './shared/toddler/catalog.js';
+
 // Add one entry here after placing a new game in dist/games/<id>/.
 // Entry and cover URLs are relative to the platform root, including subpath hosting.
 export const games = [
@@ -18,6 +20,7 @@ export const games = [
     ],
   },
 
+  ...toddlerGames,
 ];
 
 export function selectGames(catalog, records, { view = 'all', query = '' } = {}) {

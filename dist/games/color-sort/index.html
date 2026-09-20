@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#faf7ef">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="description" content="红球放红篮，蓝球放蓝篮。把小球送进同色的篮子里。">
+  <title>颜色分一分 · 玩物亲子游戏</title>
+  <link rel="icon" href="../../assets/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../../assets/icon-192.png">
+  <link rel="manifest" href="../../manifest.webmanifest">
+  <link rel="stylesheet" href="../../shared/toddler/style.css">
+</head>
+<body data-game="color-sort">
+  <header>
+    <a class="brand" href="../../index.html"><span class="brand-mark" aria-hidden="true">✿</span><span><strong>玩物 · 小小探索家</strong><small>LITTLE EXPLORERS CLUB</small></span></a>
+    <nav class="header-actions" aria-label="游戏工具">
+      <button id="sound" class="quiet" aria-label="关闭声音" aria-pressed="true">声音</button>
+      <button id="fullscreen" class="quiet" aria-label="切换全屏"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg><span class="button-label">全屏</span></button>
+      <a class="back" href="../../index.html">↖ 回大厅</a>
+    </nav>
+  </header>
+  <main>
+    <section class="heading">
+      <div><p class="eyebrow"><span id="game-name">颜色分一分</span> · 亲子时光</p><h1 id="prompt">小球要去哪个篮子？</h1><p class="instructions" id="instructions">点一个球，再点同色篮子；也可以拖过去。</p></div>
+      <label class="level"><span>探索节奏</span><select id="level" aria-label="探索节奏"><option value="gentle">轻松玩</option><option value="curious">多试一点</option></select></label>
+    </section>
+    <section class="play-area" aria-label="颜色分一分游戏区">
+      <div class="board-top"><span class="board-label" id="skill">颜色 · 分类</span><div class="progress" id="progress" role="img" aria-label="探索进度"></div></div>
+      <div class="scene" id="scene"></div>
+      <div class="board-bottom" id="feedback" role="status" aria-live="polite">小小探索，慢慢来。</div>
+      <section class="gate" id="gate" aria-labelledby="gate-title"></section>
+    </section>
+    <div class="under-board"><p class="parent-tip"><span>✧ 陪玩小灵感</span><span id="parent-tip">收玩具时一起找相同的颜色，不用急着说出颜色的名字。</span></p><div class="tools"><button id="repeat" class="text-button">♪ 听听提示</button><button id="pause" class="text-button" disabled>休息一下</button></div></div>
+    <p class="audio-note" id="audio-note" role="status" hidden>这台设备暂时无法朗读。可以看画面提示，请大人读一读；语音需要设备提供中文声音。</p>
+    <footer class="footer"><span>没有倒计时，每一点发现都值得开心。</span><span id="english-name">A BASKET OF COLORS</span></footer>
+  </main>
+  <noscript>开启 JavaScript 后，就可以和小伙伴一起玩。<a href="../../index.html">返回游戏大厅</a></noscript>
+  <script type="module" src="../../shared/toddler/game.js"></script>
+</body>
+</html>
