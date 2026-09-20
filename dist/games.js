@@ -7,7 +7,7 @@ export const games = [
     id: 'fruit-slice',
     title: '切水果',
     englishTitle: 'FRUIT SLICE',
-    description: '六种新鲜水果，一划就痛快。挑战连切纪录，或不计时间慢慢玩。',
+    description: '12 种新鲜水果，畅快连切。挑战最后的胜利果实，来回狂切赢加分。',
     category: '休闲街机',
     tags: ['触屏友好', '单人', '离线可玩'],
     entry: './games/fruit-slice/index.html',
@@ -15,7 +15,7 @@ export const games = [
     background: './games/fruit-slice/assets/arena.png',
     accent: '#d0f77a',
     modes: [
-      { id: 'classic', title: '经典挑战', description: '60 秒冲分' },
+      { id: 'classic', title: '经典挑战', description: '60 秒挑战 + 10 秒胜利奖励' },
       { id: 'zen', title: '随心切切', description: '不限时，无炸弹' },
     ],
   },

@@ -3,6 +3,8 @@ import { createGameSession, library } from '../../shared/sdk.js';
 import { registerOffline } from '../../shared/pwa.js';
 import { bindFullscreen } from '../../shared/fullscreen.js';
 import { segmentHitsCircle, pointsForCut, bombPenalty, launchVelocity } from './physics.js';
+import { fruitCatalog, fruitKinds } from './fruit-catalog.js';
+import { VICTORY_SECONDS, createVictoryFruit, sliceVictoryFruit } from './victory.js';
 
 const $ = id => document.getElementById(id);
 const app = $('app'), canvas = $('arena'), ctx = canvas.getContext('2d', { alpha: true });
@@ -20,14 +22,9 @@ let fruits = [], pieces = [], particles = [], splats = [], labels = [], trails =
 let activePointer = null, pointer = null, keyboardBlade = null, keys = new Set();
 let audio = null, soundOn = library.read().settings.sound;
 let lastFrame = performance.now(), toastTimer, nextFruitId = 0;
+let victory = null, victoryTimeLeft = 0;
 const rand = (lo, hi) => lo + Math.random() * (hi - lo);
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
-const fruitKinds = ['watermelon', 'orange', 'lemon', 'kiwi', 'apple', 'strawberry'];
-const fruitColors = {
-  watermelon: ['#ff6376', '#e5f59b'], orange: ['#ffa329', '#ffd779'],
-  lemon: ['#f7dc44', '#fff2a1'], kiwi: ['#a1d84d', '#e6f4b1'],
-  apple: ['#ed5b68', '#ffe6b1'], strawberry: ['#f55a74', '#ffb4c0'],
-};
 let fruitBag = [];
 function nextFruitKind() {
   if (!fruitBag.length) {
@@ -51,6 +48,7 @@ function resize() {
   canvas.width = Math.round(width * dpr); canvas.height = Math.round(height * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   gravity = Math.max(700, height * 1.55);
+  if (victory) positionVictoryFruit();
   if (previousWidth && previousHeight) {
     const sx = width / previousWidth, sy = height / previousHeight;
     for (const list of [fruits, pieces, particles, labels, splats]) for (const item of list) {
@@ -97,11 +95,13 @@ function showState(next) {
   $('pause').hidden = next !== 'playing';
   $('pause-screen').hidden = next !== 'paused';
   $('result').hidden = next !== 'result';
+  $('victory-banner').hidden = next !== 'playing' || !victory;
+  app.dataset.phase = victory ? 'victory' : 'normal';
   // Keep background controls out of the keyboard focus order behind dialogs.
   const modal = next === 'paused' || next === 'result';
   document.querySelector('.topbar').inert = modal;
   canvas.inert = modal || next === 'home';
-  $('hint').textContent = next === 'home' ? '手指滑一滑，快乐就开花' : mode === 'zen' ? '慢慢来，每一刀都算数' : '连续切中有奖励 · 小心炸弹';
+  $('hint').textContent = next === 'home' ? '手指滑一滑，快乐就开花' : victory ? '来回划切金色果实，每一刀都加分！' : mode === 'zen' ? '慢慢来，每一刀都算数' : '连续切中有奖励 · 小心炸弹';
   $('bottom-note').textContent = next === 'home' ? '一刀一果 · 刚刚好' : '按 Esc 暂停';
   if (next !== 'playing') { resetInput(); $('combo').classList.remove('visible'); }
 }
@@ -109,17 +109,20 @@ function syncBest() {
   $('home-best').textContent = bests[mode]; $('hud-best').textContent = bests[mode];
 }
 function syncHUD() {
+  const remaining = victory ? victoryTimeLeft : timeLeft;
   $('score').textContent = score;
-  $('time').innerHTML = mode === 'zen' ? '∞' : `${Math.ceil(timeLeft)}<span>s</span>`;
-  $('timer-label').textContent = mode === 'zen' ? '随心切切' : '剩余时间';
-  $('time-fill').style.transform = `scaleX(${mode === 'zen' ? 1 : timeLeft / 60})`;
-  document.querySelector('.timer-block').classList.toggle('urgent', mode === 'classic' && timeLeft <= 10);
+  $('time').innerHTML = mode === 'zen' ? '∞' : `${Math.ceil(remaining)}<span>s</span>`;
+  $('timer-label').textContent = victory ? '奖励时间' : mode === 'zen' ? '随心切切' : '剩余时间';
+  $('time-fill').style.transform = `scaleX(${mode === 'zen' ? 1 : remaining / (victory ? VICTORY_SECONDS : 60)})`;
+  document.querySelector('.timer-block').classList.toggle('urgent', mode === 'classic' && !victory && timeLeft <= 10);
+  if (victory) $('victory-count').textContent = `${victory.hits} 刀 · 额外 +${victory.points} 分`;
 }
 function startGame() {
   session.start(mode);
   unlockAudio(); tone('start');
   score = 0; cuts = 0; maxCombo = 0; combo = 0; lastCut = -100; comboUntil = 0;
   timeLeft = 60; elapsed = 0; waveIn = .35; shake = 0;
+  victory = null; victoryTimeLeft = 0;
   fruits = []; pieces = []; particles = []; labels = []; splats = []; fruitBag = [];
   $('flash').classList.remove('hit'); resetInput(); syncBest(); syncHUD();
   showState('playing'); lastFrame = performance.now(); canvas.focus({ preventScroll: true });
@@ -143,9 +146,25 @@ function finish() {
   $('result-title').textContent = record ? '新纪录，漂亮！' : '这一局，够爽。';
   $('result-score').textContent = score; $('result-cuts').textContent = cuts;
   $('result-combo').textContent = maxCombo; $('result-best').textContent = bests[mode];
+  $('result-bonus').hidden = !victory;
+  $('result-bonus').textContent = victory ? `胜利果实 ${victory.hits} 刀 · 额外 +${victory.points} 分` : '';
   syncBest(); showState('result'); $('again').focus({ preventScroll: true });
 }
-function home() { showState('home'); fruits = []; pieces = []; particles = []; labels = []; splats = []; syncBest(); $('start').focus({ preventScroll: true }); }
+function home() { victory = null; victoryTimeLeft = 0; showState('home'); fruits = []; pieces = []; particles = []; labels = []; splats = []; syncBest(); $('start').focus({ preventScroll: true }); }
+
+function positionVictoryFruit() {
+  const verticalPosition = width > height ? (height < 500 ? .7 : .64) : .59;
+  Object.assign(victory, { x: width / 2, y: height * verticalPosition, r: clamp(Math.min(width, height) * .17, 48, 118) });
+}
+function startVictory() {
+  if (victory || mode !== 'classic') return;
+  victory = createVictoryFruit(0, 0, 0); positionVictoryFruit();
+  victoryTimeLeft = VICTORY_SECONDS;
+  fruits = []; pieces = []; splats = []; labels = []; trails = [];
+  combo = 0; lastCut = -100; shake = 0;
+  $('combo').classList.remove('visible'); $('flash').classList.remove('hit');
+  showState('playing'); syncHUD(); tone('start');
+}
 
 document.querySelectorAll('[data-mode]').forEach(button => button.addEventListener('click', () => {
   mode = button.dataset.mode;
@@ -213,7 +232,7 @@ function spawnWave() {
   const center = rand(width * .28, width * .72);
   for (let i = 0; i < count; i++) {
     const fruitKind = nextFruitKind();
-    const size = { watermelon: 1.1, orange: .96, lemon: .91, kiwi: .95, apple: 1, strawberry: .91 }[fruitKind];
+    const size = fruitCatalog[fruitKind].size;
     const r = radius * rand(.91, 1.08) * size;
     const x = clamp(center + (i - (count - 1) / 2) * r * 1.9, r + 14, width - r - 14);
     const y = height + r + rand(10, 60);
@@ -229,6 +248,16 @@ function spawnWave() {
 }
 function cutBetween(a, b) {
   if (state !== 'playing' || Math.hypot(b.x - a.x, b.y - a.y) < 2) return;
+  if (victory) {
+    const points = sliceVictoryFruit(victory, a, b, elapsed);
+    if (points) {
+      score += points; cuts++; maxCombo = Math.max(maxCombo, victory.hits);
+      burst(victory, false); tone('cut', Math.min(8, Math.floor(victory.hits / 3)));
+      labels.push({ x: victory.x + rand(-victory.r * .5, victory.r * .5), y: victory.y - victory.r * .65, text: `+${points}`, color: '#ffe6a0', life: .7, total: .7 });
+      syncHUD();
+    }
+    return;
+  }
   const angle = Math.atan2(b.y - a.y, b.x - a.x);
   for (const fruit of fruits) {
     if (fruit.cut || fruit.y > height + fruit.r * .2 || !segmentHitsCircle(a, b, { ...fruit, r: fruit.r * .91 }, 4)) continue;
@@ -238,7 +267,7 @@ function cutBetween(a, b) {
       combo = 0; lastCut = -100; $('combo').classList.remove('visible'); tone('bomb');
       if (!reducedMotion) { shake = .23; $('flash').classList.remove('hit'); void $('flash').offsetWidth; $('flash').classList.add('hit'); }
       burst(fruit, true); labels.push({ x: fruit.x, y: fruit.y - fruit.r, text: '−20 分  −3 秒', color: '#ffaaa1', life: 1.2, total: 1.2 });
-      syncHUD(); if (timeLeft <= 0) { finish(); break; } continue;
+      syncHUD(); if (timeLeft <= 0) { startVictory(); break; } continue;
     }
     combo = elapsed - lastCut < .38 ? combo + 1 : 1; lastCut = elapsed;
     const points = pointsForCut(combo); score += points; cuts++; maxCombo = Math.max(maxCombo, combo);
@@ -257,7 +286,7 @@ function cutBetween(a, b) {
   }
 }
 function burst(fruit, bomb) {
-  const colors = fruitColors[fruit.fruitKind] || fruitColors.watermelon;
+  const colors = fruit.fruitKind === 'victory' ? ['#ffd36a', '#fff4bd'] : fruitCatalog[fruit.fruitKind || 'watermelon'].juice;
   const color = bomb ? '#ffba66' : colors[0];
   for (let i = 0; i < (reducedMotion ? 7 : 22); i++) {
     const angle = rand(0, Math.PI * 2), speed = rand(70, bomb ? 460 : 300);
@@ -282,6 +311,21 @@ function drawBomb(item, clock) {
   for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; ctx.beginPath(); ctx.moveTo(Math.cos(a) * 4, Math.sin(a) * 4); ctx.lineTo(Math.cos(a) * (8 + Math.sin(clock * 20 + i) * 3), Math.sin(a) * 10); ctx.stroke(); }
   ctx.restore();
 }
+function drawVictoryFruit() {
+  const { x, y, r } = victory;
+  const pulse = reducedMotion ? 0 : Math.max(0, 1 - (elapsed - victory.lastHitAt) / .18);
+  const halo = ctx.createRadialGradient(x, y, r * .4, x, y, r * 1.9);
+  halo.addColorStop(0, '#ffdb6355'); halo.addColorStop(.6, '#ffc95122'); halo.addColorStop(1, '#ffc95100');
+  ctx.fillStyle = halo; ctx.fillRect(x - r * 2, y - r * 2, r * 4, r * 4);
+  ctx.save(); ctx.translate(x, y); ctx.rotate(reducedMotion ? 0 : elapsed * .12);
+  ctx.strokeStyle = '#ffe39a66'; ctx.lineWidth = 2;
+  for (let i = 0; i < 12; i++) {
+    const a = i * Math.PI / 6;
+    ctx.beginPath(); ctx.moveTo(Math.cos(a) * r * 1.35, Math.sin(a) * r * 1.35); ctx.lineTo(Math.cos(a) * r * 1.48, Math.sin(a) * r * 1.48); ctx.stroke();
+  }
+  ctx.restore();
+  drawSprite('whole', { ...victory, r: r * (1 + pulse * .07), angle: reducedMotion ? 0 : Math.sin(elapsed * 2) * .025 });
+}
 function drawHome(clock) {
   const narrow = width <= 1024 && height > width;
   const centerX = narrow ? width * .5 : width * .7;
@@ -295,6 +339,7 @@ function drawHome(clock) {
   shade.addColorStop(0, '#001a154d'); shade.addColorStop(1, '#001a1500'); ctx.fillStyle = shade;
   ctx.beginPath(); ctx.ellipse(centerX, centerY + r * 1.65, r * 1.7, r * .3, 0, 0, 7); ctx.fill();
   drawSprite('whole', { x: centerX + r * .79, y: centerY - r * .57 - bob * .6, r: r * .57, angle: .3, fruitKind: 'orange' });
+  drawSprite('whole', { x: centerX - r * .79, y: centerY - r * .81 - bob * .5, r: r * .43, angle: -.3, fruitKind: 'pineapple' });
   drawSprite('whole', { x: centerX - r * .15, y: centerY - r * .07 + bob, r: r * .87, angle: -.23 + (reducedMotion ? 0 : Math.sin(clock * .6) * .04) });
   drawSprite('whole', { x: centerX - r * 1.02, y: centerY + r * .4 - bob * .6, r: r * .44, angle: -.3, fruitKind: 'strawberry' });
   drawSprite('half', { x: centerX - r * .44, y: centerY + r * .68 - bob * .6, r: r * .77, angle: 1.24 });
@@ -311,9 +356,14 @@ function drawHome(clock) {
 }
 function update(dt) {
   elapsed += dt;
-  if (mode === 'classic') { timeLeft = Math.max(0, timeLeft - dt); if (timeLeft <= 0) { syncHUD(); finish(); return; } }
-  waveIn -= dt;
-  if (waveIn <= 0) { spawnWave(); waveIn = mode === 'zen' ? rand(1.3, 1.7) : rand(.95, 1.4) - Math.min(.3, elapsed * .004); }
+  if (victory) {
+    victoryTimeLeft = Math.max(0, victoryTimeLeft - dt);
+    if (victoryTimeLeft <= 0) { syncHUD(); finish(); return; }
+  } else {
+    if (mode === 'classic') { timeLeft = Math.max(0, timeLeft - dt); if (timeLeft <= 0) { startVictory(); return; } }
+    waveIn -= dt;
+    if (waveIn <= 0) { spawnWave(); waveIn = mode === 'zen' ? rand(1.3, 1.7) : rand(.95, 1.4) - Math.min(.3, elapsed * .004); }
+  }
   if (keyboardBlade) {
     const previous = { ...keyboardBlade }, speed = Math.max(450, width * .65);
     keyboardBlade.x = clamp(keyboardBlade.x + ((keys.has('ArrowRight') ? 1 : 0) - (keys.has('ArrowLeft') ? 1 : 0)) * speed * dt, 0, width);
@@ -342,6 +392,7 @@ function draw(clock) {
   ctx.globalAlpha = 1;
   for (const p of pieces) drawSprite('half', p, Math.min(1, p.life * 2));
   for (const f of fruits) { if (f.type === 'bomb') drawBomb(f, clock); else drawSprite('whole', f); }
+  if (victory) drawVictoryFruit();
   for (const p of particles) { ctx.globalAlpha = Math.min(1, p.life / .3); ctx.fillStyle = p.color; ctx.beginPath(); ctx.ellipse(p.x, p.y, p.r, p.r * .72, Math.atan2(p.vy, p.vx), 0, 7); ctx.fill(); }
   ctx.globalAlpha = 1;
   for (const label of labels) { ctx.save(); ctx.globalAlpha = Math.min(1, label.life * 3); ctx.textAlign = 'center'; ctx.font = '800 25px system-ui'; ctx.fillStyle = label.color; ctx.shadowColor = '#082519'; ctx.shadowBlur = 9; ctx.fillText(label.text, label.x, label.y); ctx.restore(); }
@@ -385,7 +436,7 @@ if (document.modelContext?.registerTool) {
     },
   }, { signal: lifecycle.signal })).catch(() => {});
   try {
-    register('melon_game_status', '读取切水果的模式、状态、得分和剩余时间。', () => ({ state, mode, score, timeLeft: mode === 'zen' ? null : timeLeft, cuts, maxCombo }), true);
+    register('melon_game_status', '读取切水果的模式、状态、得分和剩余时间。', () => ({ state, mode, phase: victory ? 'victory' : 'normal', score, timeLeft: mode === 'zen' ? null : victory ? victoryTimeLeft : timeLeft, victoryHits: victory?.hits || 0, victoryPoints: victory?.points || 0, cuts, maxCombo }), true);
     register('melon_pause', '暂停当前正在进行的切水果游戏。', () => { pause(); return { state }; });
     register('melon_resume', '继续已暂停的切水果游戏。', () => { resume(); return { state }; });
   } catch { /* Experimental API availability must not affect the game. */ }

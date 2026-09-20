@@ -33,9 +33,9 @@
     <div class="home-copy">
       <p class="eyebrow"><span></span> 夏日特供 · 随时开切</p>
       <h1 id="home-title">切个<span>痛快<em>。</em></span></h1>
-      <p class="intro">把烦恼放一边，<br class="mobile-break">今天只管切水果。</p>
+      <p class="intro">把烦恼放一边，<br class="mobile-break">12 种鲜果，今天切个痛快。</p>
       <div class="mode-picker" role="group" aria-label="游戏模式">
-        <button data-mode="classic" aria-pressed="true">经典挑战<small>60 秒</small></button>
+        <button data-mode="classic" aria-pressed="true">经典挑战<small>60 秒 + 奖励</small></button>
         <button data-mode="zen" aria-pressed="false">随心切切<small>不限时</small></button>
       </div>
       <button class="primary" id="start"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 11 7-11 7z"/></svg>开始切水果<span>LET’S SLICE</span></button>
@@ -49,6 +49,7 @@
     <div class="timer-block"><span class="hud-label" id="timer-label">剩余时间</span><strong id="time">60<span>s</span></strong><div class="time-track"><i id="time-fill"></i></div></div>
   </section>
   <div id="combo" class="combo" aria-live="polite"></div>
+  <section id="victory-banner" class="victory-banner" hidden aria-label="胜利果实奖励阶段"><p class="victory-eyebrow">VICTORY FRUIT</p><h2 role="status">胜利果实，尽情狂切！</h2><p class="victory-instruction">来回划切 · 20–50 分 / 刀</p><strong id="victory-count">0 刀 · 额外 +0 分</strong></section>
   <div id="flash" aria-hidden="true"></div>
 
   <footer class="bottom-bar"><span class="gesture-hint"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 16-16M4 12v8h8"/></svg><span id="hint">手指滑一滑，快乐就开花</span></span><span class="bottom-note" id="bottom-note">一刀一果 · 刚刚好</span></footer>
@@ -57,9 +58,9 @@
     <div class="panel"><p class="eyebrow">TAKE A BREATHER</p><h2 id="pause-title">水果等你回来。</h2><p>休息一下，快乐不会溜走。</p><button class="primary" id="resume">继续切水果</button><button class="secondary" id="restart">重新开始</button><button class="text-button" id="pause-home">返回游戏首页</button><a class="lobby-exit" href="../../index.html">返回游戏大厅</a></div>
   </section>
   <section class="modal-wrap" id="result" role="dialog" aria-modal="true" aria-labelledby="result-title" hidden>
-    <div class="panel result-panel"><p class="eyebrow" id="result-tag">NICE SLICING!</p><h2 id="result-title">这一局，够爽。</h2><div class="result-score" id="result-score">0</div><p class="result-unit">本局得分</p><div class="result-stats"><div><b id="result-cuts">0</b><span>切开水果</span></div><div><b id="result-combo">0</b><span>最高连切</span></div><div><b id="result-best">0</b><span>历史最佳</span></div></div><button class="primary" id="again">再切一局</button><button class="text-button" id="result-home">返回游戏首页</button><a class="lobby-exit" href="../../index.html">返回游戏大厅</a></div>
+    <div class="panel result-panel"><p class="eyebrow" id="result-tag">NICE SLICING!</p><h2 id="result-title">这一局，够爽。</h2><div class="result-score" id="result-score">0</div><p class="result-unit">本局得分</p><p id="result-bonus" class="result-bonus" hidden></p><div class="result-stats"><div><b id="result-cuts">0</b><span>有效切中</span></div><div><b id="result-combo">0</b><span>最高连切</span></div><div><b id="result-best">0</b><span>历史最佳</span></div></div><button class="primary" id="again">再切一局</button><button class="text-button" id="result-home">返回游戏首页</button><a class="lobby-exit" href="../../index.html">返回游戏大厅</a></div>
   </section>
-  <dialog id="help" class="panel help-panel"><button class="close-button icon-button" id="help-close" aria-label="关闭玩法说明">×</button><p class="eyebrow">HOW TO SLICE</p><h2>一划，就会。</h2><div class="rules"><p><b>01</b><span>按住鼠标拖动，或用手指滑过水果。<small>每个水果 10 分，连续切中还有额外奖励。</small></span></p><p><b>02</b><span>经典挑战，60 秒尽情发挥。<small>小心炸弹：扣 20 分和 3 秒。漏掉水果不扣分。</small></span></p><p><b>03</b><span>随心切切，无炸弹、无倒计时。<small>想结束时，点右上角暂停，再选「结束本局」。</small></span></p></div><p class="keyboard-note">键盘：方向键移动刀光，按住空格切水果，Esc 暂停。<br>iPad：在 Safari 分享菜单中「添加到主屏幕」，玩起来更沉浸。</p></dialog>
+  <dialog id="help" class="panel help-panel"><button class="close-button icon-button" id="help-close" aria-label="关闭玩法说明">×</button><p class="eyebrow">HOW TO SLICE</p><h2>一划，就会。</h2><div class="rules"><p><b>01</b><span>按住鼠标拖动，或用手指滑过水果。<small>每个水果 10 分，连续切中还有额外奖励。</small></span></p><p><b>02</b><span>经典挑战，60 秒尽情发挥。<small>小心炸弹：扣 20 分和 3 秒。漏掉水果不扣分。</small></span></p><p><b>03</b><span>挑战结束，胜利果实登场！<small>额外 10 秒内来回划切，每刀 20 分起，每 5 刀提升 5 分，最高每刀 50 分。果实不会消失，奖励计入总分。</small></span></p><p><b>04</b><span>随心切切，无炸弹、无倒计时。<small>想结束时，点右上角暂停，再选「结束本局」。</small></span></p></div><p class="keyboard-note">键盘：方向键移动刀光，按住空格切水果，Esc 暂停。<br>iPad：在 Safari 分享菜单中「添加到主屏幕」，玩起来更沉浸。</p></dialog>
   <div class="toast" id="toast" role="status" hidden></div>
   <noscript>请启用 JavaScript 后开始切水果。</noscript>
 </main>

@@ -33,12 +33,12 @@ export function createAudio(enabled, onUnavailable) {
     oscillator.connect(gain); gain.connect(context.destination); oscillator.start(at); oscillator.stop(at + length + .02); nodes.add(oscillator);
     oscillator.onended = () => { nodes.delete(oscillator); oscillator.disconnect(); gain.disconnect(); };
   }
-  function instrument(id) {
+  function instrument(id, sound, notes = [523.25,659.25,783.99]) {
     if (id === 'drum') tone(150, .25, 'sine', 0, true);
     else if (id === 'bell') { tone(784, .65); tone(1568, .35); }
-    else if (id === 'piano') { tone(523.25); tone(659.25, .35, 'sine', .15); tone(783.99, .4, 'sine', .3); }
-    else speak({ cat: '喵喵', dog: '汪汪', duck: '嘎嘎' }[id]);
+    else if (id === 'piano') { tone(notes[0]); tone(notes[1], .35, 'sine', .15); tone(notes[2], .4, 'sine', .3); }
+    else if (sound) speak(sound);
   }
   function stop() { globalThis.speechSynthesis?.cancel(); for (const node of nodes) { try { node.stop(); } catch { /* Already stopped. */ } } nodes.clear(); }
-  return { unlock, speak, instrument, stop, success() { tone(523, .16); tone(659, .22, 'sine', .13); }, melody() { [523,659,784,659,523].forEach((note,i) => tone(note,.33,'sine',i*.4)); } };
+  return { unlock, speak, instrument, stop, success() { tone(523, .16); tone(659, .22, 'sine', .13); }, melody(notes = [523,659,784,659,523]) { notes.forEach((note,i) => tone(note,.33,'sine',i*.4)); } };
 }

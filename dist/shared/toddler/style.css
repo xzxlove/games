@@ -21,3 +21,23 @@
   .music-grid{gap:10px}.music-key{min-height:113px;padding:5px 10px 10px}.music-key .illustration{height:75px;width:75px}
   .under-board{margin-top:14px}.footer{margin-top:15px}
 }
+
+/* Stage progression shares the same gentle controls and viewport budget. */
+.board-label{display:flex;align-items:center;gap:10px;flex-wrap:wrap;line-height:1.6;min-width:0}
+.stage-chip{font-size:12px;font-weight:600;color:var(--accent);padding:4px 10px;border-radius:9px;background:var(--tint);white-space:nowrap}
+.board-label>span{font-size:11px;letter-spacing:.03em}.progress{flex-shrink:0}
+.gate{gap:12px}.gate .illustration{width:120px;height:120px}
+.gate.stage-complete{gap:10px;padding:20px}.gate.stage-complete>.illustration{width:80px;height:80px}
+.gate.stage-complete .replay-stage{min-height:30px;border:0;padding:3px 15px;margin:0}
+.care-prop{position:absolute;bottom:-8px;right:-21px;width:95px;height:95px}.care-prop .illustration{width:100%;height:100%}
+.care-status{max-width:165px;text-align:center;font-size:11px}
+.garden-sign{position:absolute;left:13px;top:17px;font-size:11px;z-index:2;border-left:3px solid var(--flower-color);padding:3px 7px;color:#79795d;background:#fffdf19c;border-radius:3px}
+.boxes{position:relative;border-radius:28px;padding:8px 0}
+.hide-setting-0{background:linear-gradient(0deg,#eee1ce 12%,#f9f4e9 12%)}
+.hide-setting-1{background:radial-gradient(circle at 87% 14%,#edcf78 0 16px,transparent 17px),linear-gradient(0deg,#dce5c7 12%,#eef4e5 12%)}
+.hide-setting-2{background:radial-gradient(circle at 12% 17%,#f3e2a5 0 15px,transparent 16px),radial-gradient(circle at 84% 20%,#e4d59c 0 3px,transparent 4px),#e6e6f1}
+.hide-setting-3{background:repeating-linear-gradient(90deg,#f2e0d655 0 22px,#fff8ed77 22px 44px),#f8eee2}
+@media(max-width:480px){.board-label{gap:6px;flex:1}.board-label>span{font-size:10px}.stage-chip{padding:3px 7px;font-size:10px}.gate.stage-complete h2{font-size:21px}.care-prop{width:77px;height:77px;right:-7px}.garden-sign{font-size:10px;left:8px;top:15px}}
+@media(min-width:761px) and (max-height:850px){.gate.stage-complete{gap:8px;padding:16px}.gate.stage-complete>.illustration{width:56px;height:56px}.gate.stage-complete h2{font-size:23px}.gate.stage-complete p{font-size:13px}.gate .illustration{width:108px;height:108px}}
+@media(max-height:600px) and (min-width:600px){.gate{gap:8px;padding:16px}.gate .illustration,.gate.stage-complete>.illustration{width:53px;height:53px}.gate h2{font-size:21px}.gate.stage-complete .gate-actions{margin:0}.gate.stage-complete .primary,.gate.stage-complete .secondary{min-height:46px;padding-top:10px;padding-bottom:10px}}
+@media(min-width:761px) and (max-height:850px){.boxes{padding:5px 0}.box-button{width:170px;min-height:177px;padding:5px 10px}.box-button .illustration{height:150px}}
