@@ -4,6 +4,22 @@ import { toddlerGames } from './shared/toddler/catalog.js';
 // Entry and cover URLs are relative to the platform root, including subpath hosting.
 export const games = [
   {
+    id: 'fruit-connect',
+    title: '果园连连看',
+    englishTitle: 'LITTLE CONNECTIONS',
+    description: '把快乐，一对一对连起来。穿过清晨、午后与落日，收获一整个小果园。',
+    category: '休闲益智',
+    tags: ['水果配对', '3 关挑战', '不限时模式', '离线可玩'],
+    entry: './games/fruit-connect/index.html',
+    cover: './games/fruit-connect/cover.svg',
+    background: './games/fruit-connect/background.svg',
+    accent: '#cdddac',
+    modes: [
+      { id: 'classic', title: '经典闯关', description: '限时三关，挑战连击' },
+      { id: 'zen', title: '悠闲时光', description: '没有倒计时，慢慢连' },
+    ],
+  },
+  {
     id: 'fruit-slice',
     title: '切水果',
     englishTitle: 'FRUIT SLICE',

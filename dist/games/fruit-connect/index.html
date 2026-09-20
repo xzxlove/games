@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f7f8ef">
+  <meta name="description" content="在小小果园里，连起一对对快乐。支持触屏、键盘和离线游玩的水果连连看。">
+  <title>果园连连看 · 玩物</title>
+  <link rel="icon" type="image/svg+xml" href="./icon.svg">
+  <link rel="apple-touch-icon" href="../../assets/icon-192.png">
+  <link rel="manifest" href="../../manifest.webmanifest">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<main id="app" data-state="ready">
+  <header class="topbar">
+    <a class="brand" href="../../index.html" aria-label="果园连连看，返回游戏大厅"><img src="./icon.svg" width="43" height="43" alt=""><span>果园连连看<small>LITTLE CONNECTIONS</small></span></a>
+    <nav class="top-tools" aria-label="游戏工具">
+      <a class="lobby" href="../../index.html"><svg viewBox="0 0 24 24"><path d="m14 6-6 6 6 6"/></svg><span>游戏大厅</span></a>
+      <button id="help" class="icon-button" aria-label="玩法说明" title="玩法说明"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 8.5a2.5 2.5 0 0 1 5 0c0 2-2.5 2-2.5 4m0 3.5v.1"/></svg></button>
+      <button id="sound" class="icon-button" aria-label="关闭声音" aria-pressed="true" title="声音（音效与水果名称）"><svg viewBox="0 0 24 24"><path d="m11 5-5 4H3v6h3l5 4z"/><path class="sound-wave" d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/><path class="sound-off" d="m16 9 5 6m0-6-5 6"/></svg></button>
+      <button id="fullscreen" class="icon-button" aria-label="进入全屏" title="全屏"><svg viewBox="0 0 24 24"><path d="M8 4H4v4m12-4h4v4M4 16v4h4m12-4v4h-4"/></svg></button>
+    </nav>
+  </header>
+
+  <section class="page-heading">
+    <div><p class="eyebrow"><i></i> 一点专注，一点小快乐</p><h1>把快乐，<span>连起来。</span><svg class="heading-spark" viewBox="0 0 40 40" aria-hidden="true"><path d="m19 2 2 11M34 12l-9 5M33 30l-9-6"/></svg></h1><p class="intro">找到相同的水果，让好心情一对一对发生。</p></div>
+    <div class="mode-picker" role="group" aria-label="游戏模式"><button data-mode="classic" aria-pressed="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v5l3 2M9 2h6"/></svg>经典闯关<small>与时间赛跑</small></button><button data-mode="zen" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M20 4C7 2 1 11 8 17c7 7 14-2 12-13ZM6 20 16 9"/></svg>悠闲时光<small>慢慢来，也很好</small></button></div>
+  </section>
+
+  <div class="game-layout">
+    <section class="orchard" aria-label="连连看棋盘">
+      <div class="board-heading"><div><span class="level-number" id="level-number">01</span><h2 id="level-title">清晨果园</h2><span class="level-pill" id="level-pill">第 1 / 3 关</span></div><span class="remaining"><b id="remaining">24</b> 对待相遇</span></div>
+      <div class="board-wrap" id="board-wrap">
+        <div class="board" id="board" role="group" aria-label="水果棋盘，方向键移动，Enter 或空格选中"></div>
+        <svg class="connections" id="connections" aria-hidden="true"></svg>
+        <div class="board-cover" id="board-cover" hidden><span>Ⅱ</span><strong>让快乐稍等一下</strong><small>准备好了，再继续。</small></div>
+        <div class="floating-points" id="floating-points" aria-hidden="true"></div>
+      </div>
+      <div class="board-footer"><span><i></i><span id="board-tip">相同水果，轻轻一点就相连</span></span><span class="key-tip">最多 2 次转弯</span></div>
+    </section>
+
+    <aside class="sidebar">
+      <section class="score-card"><div class="score-caption"><span>这一刻的收获</span><svg viewBox="0 0 24 24"><path d="m12 3 2.7 5.7 6.3.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.3-.9Z"/></svg></div><strong class="score" id="score">0</strong><div class="record">个人最佳 <b id="best">0</b><span id="combo">好事成双</span></div><div class="timer-header"><span id="timer-caption">本关剩余时间</span><strong id="time">03:00</strong></div><div class="time-track" id="time-track" role="progressbar" aria-label="剩余时间" aria-valuemin="0" aria-valuemax="180" aria-valuenow="180"><i id="time-fill"></i></div></section>
+      <section class="action-card"><p class="small-label">给快乐一点助攻</p><div class="boosters"><button id="hint" disabled><svg viewBox="0 0 24 24"><path d="M9 17h6m-5 4h4M8 13a6 6 0 1 1 8 0c-1 1-1 2-1 4H9c0-2 0-3-1-4Z"/></svg><span>提示</span><b id="hints">3</b><kbd>H</kbd></button><button id="shuffle" disabled><svg viewBox="0 0 24 24"><path d="M3 6h3c5 0 7 12 12 12h3m-4-4 4 4-4 4M3 18h3c2 0 3-2 4-4m4-4c1-2 2-4 4-4h3m-4-4 4 4-4 4"/></svg><span>洗牌</span><b id="shuffles">3</b><kbd>R</kbd></button></div><button class="primary" id="start"><span>开始小小冒险</span><svg viewBox="0 0 24 24"><path d="m10 6 6 6-6 6"/></svg></button><button class="secondary" id="pause" hidden><svg viewBox="0 0 24 24"><path d="M9 5v14m6-14v14"/></svg><span>歇一歇</span><kbd>Esc</kbd></button></section>
+      <section class="note-card"><div class="note-art" aria-hidden="true"><svg viewBox="0 0 100 70"><path d="M28 47c15-16 30-14 46-28" stroke="#b8c4a4" stroke-dasharray="3 5" fill="none" stroke-width="2"/><g transform="rotate(-12 25 35)"><rect x="6" y="13" width="40" height="43" rx="10" fill="#fffaf1" stroke="#e9dfc8"/><path d="M18 32c1-9 17-9 18 0 2 7-9 17-9 17S16 39 18 32" fill="#e6a296"/><path d="m27 31-7-6 7 1 4-5 1 6 5 1z" fill="#84966b"/></g><g transform="rotate(10 72 31)"><rect x="53" y="5" width="40" height="43" rx="10" fill="#fffaf1" stroke="#e9dfc8"/><path d="M65 24c1-9 17-9 18 0 2 7-9 17-9 17S63 31 65 24" fill="#e6a296"/><path d="m74 23-7-6 7 1 4-5 1 6 5 1z" fill="#84966b"/></g></svg></div><h3>生活偶尔绕个弯，<br>也能遇见小圆满。</h3><p>连线可以从果园外围经过哦。</p></section>
+    </aside>
+  </div>
+  <footer class="page-footer"><span>MADE FOR YOUR LITTLE BREAK <i>✳</i></span><span>点击配对 · 连接快乐 · 离线可玩</span></footer>
+  <dialog id="modal"><button class="close-modal icon-button" id="modal-close" aria-label="关闭弹窗">×</button><div class="modal-art" id="modal-art" aria-hidden="true"></div><p class="eyebrow" id="modal-eyebrow">A LITTLE GUIDE</p><h2 id="modal-title">快乐，有迹可循。</h2><div id="modal-content"></div><button class="primary" id="modal-action">知道了</button><button class="text-button" id="modal-secondary" hidden>重新开始</button></dialog>
+  <div class="toast" id="toast" role="status" hidden></div>
+  <span class="sr-only" id="announcement" aria-live="polite"></span>
+  <noscript>请启用 JavaScript，来果园玩一局连连看。</noscript>
+</main>
+<script type="module" src="./game.js"></script>
+</body>
+</html>
