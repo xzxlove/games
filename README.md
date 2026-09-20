@@ -1,16 +1,78 @@
-# 果切俱乐部
+# 玩物 · 私人游戏平台
 
-适配 iPad 和桌面浏览器的轻量切水果游戏，无运行时第三方依赖。
+纯静态、无运行时第三方依赖的个人游戏大厅。当前接入切水果，后续游戏按模块独立加入。整个 `dist` 目录可直接部署到 Nginx，支持部署在域名根目录或子目录。
 
-- 西瓜、橙子、柠檬、猕猴桃、苹果、草莓，六种水果随机轮换。
-- 经典 60 秒挑战、无限时无炸弹练习、连切奖励、按模式保存最高分。
-- 触摸 / 鼠标 / 键盘操作，暂停、音效、全屏和添加到主屏幕支持。
-- 水果和特效使用 Canvas；背景图为生成素材。
+## 已有功能
 
-运行：`npm run dev`，打开 http://localhost:4173/ 。服务监听本机所有网络接口；同一局域网的 iPad 可用电脑的局域网 IP 和 4173 端口访问。
+- 游戏大厅、搜索、收藏、最近游玩、按游戏和模式统计的个人最佳。
+- 切水果：西瓜、橙子、柠檬、猕猴桃、苹果、草莓；60 秒挑战和不限时练习。
+- 鼠标、触摸、键盘操作，游戏内暂停、音效、全屏与返回大厅。
+- iPad 横竖屏适配、添加到主屏幕、HTTPS 下的离线缓存。
+- 自动继承旧版切水果的最高分和音效设置。
 
-检查：`npm run check`。
+## 本地运行与部署
 
-部署目录为 `dist`，可直接在 HTTPS 静态服务器托管。通过 HTTPS 打开并成功缓存后支持离线访问。浏览器清理站点数据会清除本地分数；不同设备的分数不互相同步。
+```sh
+npm run build
+npm run check
+npm run dev
+```
 
-iPad 在 Safari 分享菜单中选择「添加到主屏幕」。应用内的全屏按钮会在浏览器支持时调用 Fullscreen API；系统状态栏和手势区域的具体表现以设备系统为准。
+浏览器打开 http://localhost:4173/ 。开发服务器监听本机所有网络接口，同一局域网可使用电脑 IP 和 4173 端口访问。
+
+`npm run build` 只根据现有静态文件更新离线资源清单，无需安装依赖。修改源码或新增游戏后运行一次，再把 **dist 中的全部内容** 上传到 Nginx 网站根目录。参考 `deploy/nginx.conf`，并在服务器配置自己的域名和 HTTPS 证书。
+
+大厅与游戏均为真实 HTML 页面，无需单页应用路由回退或后端服务。直接访问 `/games/fruit-slice/index.html` 也能玩。
+
+## 模块结构
+
+```text
+dist/
+  index.html               游戏大厅
+  platform.js / .css       大厅交互和样式
+  games.js                 游戏目录：新增游戏的统一注册处
+  shared/
+    storage.js             本地收藏、记录、设置与旧数据迁移
+    sdk.js                 游戏记录接口
+    pwa.js                 统一离线注册
+  games/
+    fruit-slice/           切水果的 HTML、样式、逻辑、物理和素材
+  assets/                  平台图标
+  manifest.webmanifest     平台 PWA 配置
+  sw.js / precache.js       离线资源缓存
+```
+
+## 加一个新游戏
+
+1. 创建 `dist/games/<game-id>/index.html`，把游戏自己的 JS、CSS 和素材放在该目录中。
+2. 在 `dist/games.js` 的 `games` 数组中增加条目：唯一 `id`、标题、描述、分类、标签、入口、封面、背景与模式。参考已有 `fruit-slice` 条目。链接全部使用相对路径，以兼容子目录部署。
+3. 游戏页加上 `../../index.html` 返回大厅链接，并引用 `../../manifest.webmanifest`。
+4. 接入下面的记录接口，让大厅自动展示最近游玩与个人最佳。
+5. 运行 `npm run build` 和 `npm run check`，重新上传 `dist`。新增目录内的静态资源会自动进入离线清单。
+
+```js
+import { createGameSession, library } from '../../shared/sdk.js';
+import { registerOffline } from '../../shared/pwa.js';
+
+const session = createGameSession('your-game-id');
+registerOffline();
+
+// 真正开始一局时调用，不要在打开菜单时调用。
+session.start('classic');
+
+// 每局结束时调用。seconds 为实际游玩秒数，排除暂停。
+session.finish({ mode: 'classic', score: 120, seconds: 60 });
+
+const personalBest = session.best('classic');
+const soundEnabled = library.read().settings.sound;
+```
+
+游戏渲染与规则由自己的模块负责，大厅不依赖具体游戏的 Canvas、DOM 或内部状态。模式 ID 应与目录中的 `modes` 一致，分数越高越好；同一局重复调用 `finish` 不会重复记录。
+
+## 数据与离线说明
+
+所有记录保存在当前浏览器，暂无跨设备同步。清理站点数据会清除记录，隐私模式或禁用存储时仍可玩，但只保留当前页面内的临时状态。`累计开局` 包括中途退出的局；最佳分数只在完成一局后保存。
+
+HTTPS 或 localhost 环境支持 Service Worker；首次完整缓存后可离线游玩。更新在回到大厅时激活，不在一局游戏进行中主动替换资源。新增游戏后需要重新构建缓存清单。
+
+iPad 用 Safari 分享菜单「添加到主屏幕」安装游戏室。全屏按钮按浏览器能力调用 Fullscreen API；系统状态栏和手势区域仍以设备系统为准。

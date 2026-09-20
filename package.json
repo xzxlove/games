@@ -1,10 +1,11 @@
 {
-  "name": "melon-club",
+  "name": "playroom",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "node server.mjs",
-    "check": "node --check dist/game.js && node --check dist/sw.js && node --test tests/physics.test.mjs"
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/check.mjs && node --test tests/*.test.mjs"
   }
 }

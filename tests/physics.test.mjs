@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { segmentHitsCircle, pointsForCut, bombPenalty, launchVelocity } from '../dist/physics.js';
+import { segmentHitsCircle, pointsForCut, bombPenalty, launchVelocity } from '../dist/games/fruit-slice/physics.js';
 
 test('a fast swipe hits a fruit even when both sampled endpoints are outside it', () => {
   assert.equal(segmentHitsCircle({ x: 0, y: 100 }, { x: 1000, y: 100 }, { x: 500, y: 100, r: 35 }), true);

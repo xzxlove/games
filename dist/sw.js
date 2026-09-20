@@ -1,15 +1,26 @@
-const CACHE = 'melon-club-v2';
-const ASSETS = ['./', './index.html', './style.css', './game.js', './physics.js', './assets/arena.png', './assets/icon.svg', './assets/icon-192.png', './assets/icon-512.png', './manifest.webmanifest'];
+importScripts('./precache.js');
+const FAMILY = `playroom:${new URL('./', self.location).pathname}:`;
+const CACHE = FAMILY + self.PLAYROOM_VERSION;
+const ASSETS = self.PLAYROOM_ASSETS;
 const urls = new Set(ASSETS.map(p => new URL(p, self.location).href));
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS))));
-self.addEventListener('activate', event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith('melon-club-') && key !== CACHE).map(key => caches.delete(key))))));
+self.addEventListener('activate', event => event.waitUntil((async () => {
+  const keys = await caches.keys();
+  await Promise.all(keys.filter(key => (key.startsWith(FAMILY) && key !== CACHE) || (new URL(self.registration.scope).pathname === '/' && /^melon-club-v[12]$/.test(key))).map(key => caches.delete(key)));
+  await self.clients.claim();
+})()));
+self.addEventListener('message', event => { if (event.data?.type === 'ACTIVATE_UPDATE') self.skipWaiting(); });
 self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET' || !urls.has(event.request.url)) return;
-  event.respondWith(fetch(event.request).then(response => {
-    if (response.ok && !response.redirected) {
-      const copy = response.clone();
-      event.waitUntil(caches.open(CACHE).then(cache => cache.put(event.request, copy)));
-    }
-    return response;
-  }).catch(() => caches.match(event.request)));
+  const url = new URL(event.request.url); url.search = ''; url.hash = '';
+  if (event.request.method !== 'GET' || !urls.has(url.href)) return;
+  event.respondWith((async () => {
+    try {
+      const response = await fetch(event.request);
+      if (response.ok && !response.redirected) {
+        const copy = response.clone();
+        event.waitUntil(caches.open(CACHE).then(cache => cache.put(url.href, copy)));
+      }
+      return response;
+    } catch { return await caches.match(url.href) || Response.error(); }
+  })());
 });
